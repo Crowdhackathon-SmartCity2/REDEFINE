@@ -9,6 +9,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -25,13 +26,20 @@ import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.rendering.ViewRenderable;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.GenericTypeIndicator;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import gr.redefine.adapters.MessageAdapter;
 import gr.redefine.extras.Location;
@@ -47,14 +55,13 @@ import uk.co.appoly.arcorelocation.utils.ARLocationPermissionHelper;
 public class LocationActivity extends AppCompatActivity {
     private static final String TAG = "activity";
     private boolean installRequested;
-    private boolean hasFinishedLoading = false;
 
     private Snackbar loadingMessageSnackbar = null;
 
     private ArSceneView arSceneView;
 
     // Renderables for this example
-    private ViewRenderable exampleLayoutRenderable;
+
 
     // Our ARCore-Location scene
     private LocationScene locationScene;
@@ -71,23 +78,44 @@ public class LocationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sceneform);
 
         locationToWrapperMap = new HashMap<>();
+        setRcoreLocation();
 
-        /*FirebaseUtils.getUser("user1").addValueEventListener(new ValueEventListener() {
+        FirebaseUtils.getRoot().addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                GenericTypeIndicator<Map<String, Message>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Message>>() {
-                };
+//                Log.e(TAG,dataSnapshot.getValue().toString());
+                GenericTypeIndicator<Map<String, Message>> genericTypeIndicator =
+                        new GenericTypeIndicator<Map<String, Message>>() {
+                        };
                 Map<String, Message> hashMap = dataSnapshot.getValue(genericTypeIndicator);
                 if (hashMap == null) {
                     return;
                 }
-                List<Message> messages = new ArrayList<>();
-                for (Map.Entry<String, Message> entry : Objects.requireNonNull(hashMap).entrySet()) {
-                    messages.add(entry.getValue());
-                }
-                if (mAdapter != null) {
-                    mAdapter.swapItems(messages);
-                }
+//                Map<Location, List<Message>> messagePerLoc = hashMap
+//                        .entrySet()
+//                        .stream()
+//                        .map(Map.Entry::getValue)
+//                        .collect(Collectors.groupingBy(Message::getLocation, Collectors.toList()));
+                Map<Location, List<Message>> messagePerLoc = new HashMap<>();
+                hashMap.forEach((key, value) -> {
+                    Location loc = value.getLocation();
+                    if (!messagePerLoc.containsKey(loc)) {
+                        messagePerLoc.put(loc, new ArrayList<Message>());
+                    }
+                    messagePerLoc.get(loc).add(value);
+                });
+                messagePerLoc.forEach((key, value) -> {
+                    // If we don't have view on this location, create it
+                    if (!locationToWrapperMap.containsKey(key)) {
+                        Log.e(TAG, key.toString());
+                        createMarker(key).handle((a,b) -> {
+                            locationToWrapperMap.get(key).getmAdapter().swapItems(value);
+                            return null;
+                        });
+                    } else {
+                        locationToWrapperMap.get(key).getmAdapter().swapItems(value);
+                    }
+                });
             }
 
             @Override
@@ -95,50 +123,41 @@ public class LocationActivity extends AppCompatActivity {
                 // Failed to read value
                 Log.w(TAG, "Failed to read value.", error.toException());
             }
-        });*/
+        });
+
 
         Button button = findViewById(R.id.test);
 
         button.setOnClickListener(v -> {
-            DatabaseReference db = FirebaseUtils.getNewPostOnLocation(new Location(37.9454224,23.6725676));
-            db.setValue(new Message("Test" + Math.random(), "user1"));
+            DatabaseReference db = FirebaseUtils.addNewMessage();
+            db.setValue(new Message("Test" + Math.random(), "user1", new Location(23.659263, 37.942026)));
         });
 
-        // Build a renderable from a 2D View.
+    }
+
+
+    @SuppressLint("ClickableViewAccessibility")
+    private CompletableFuture<NodeAddapterWrapper> getExampleView() {
         CompletableFuture<ViewRenderable> exampleLayout =
                 ViewRenderable.builder()
                         .setView(this, R.layout.example_layout)
                         .build();
 
 
-        CompletableFuture.allOf(exampleLayout)
-                .handle(
-                        (notUsed, throwable) -> {
-                            if (throwable != null) {
-                                DemoUtils.displayError(this, "Unable to load renderables", throwable);
-                                return null;
-                            }
-                            try {
-                                exampleLayoutRenderable = exampleLayout.get();
-                                hasFinishedLoading = true;
-                                setRcoreLocation();
-
-                            } catch (InterruptedException | ExecutionException ex) {
-                                DemoUtils.displayError(this, "Unable to load renderables", ex);
-                            }
-
-                            return null;
-                        });
-    }
-
-
-    @SuppressLint("ClickableViewAccessibility")
-    private NodeAddapterWrapper getExampleView() {
-        Node base = new Node();
-        base.setRenderable(exampleLayoutRenderable);
-        Context c = this;
-        // Add  listeners etc here
-        View eView = exampleLayoutRenderable.getView();
+        return CompletableFuture.allOf(exampleLayout)
+                .handle((notUsed, throwable) -> {
+                    if (throwable != null) {
+                        DemoUtils.displayError(this, "Unable to load renderables", throwable);
+                        return null;
+                    }
+                    ViewRenderable exampleLayoutRenderable = null;
+                    Node base = new Node();
+                    try {
+                        exampleLayoutRenderable = exampleLayout.get();
+                        base.setRenderable(exampleLayoutRenderable);
+                        Context c = this;
+                        // Add  listeners etc here
+                        View eView = exampleLayoutRenderable.getView();
 //        eView.setOnTouchListener((View v, MotionEvent event) -> {
 //            Toast.makeText(
 //                    c, "Location marker touched.", Toast.LENGTH_LONG)
@@ -147,15 +166,21 @@ public class LocationActivity extends AppCompatActivity {
 //        });
 
 
-        RecyclerView recyclerView = eView.findViewById(R.id.recycler_view_chats);
-        recyclerView.setHasFixedSize(true);
+                        RecyclerView recyclerView = eView.findViewById(R.id.recycler_view_chats);
+                        recyclerView.setHasFixedSize(true);
 
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(eView.getContext());
-        recyclerView.setLayoutManager(layoutManager);
+                        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(eView.getContext());
+                        recyclerView.setLayoutManager(layoutManager);
 
-        mAdapter = new MessageAdapter(new ArrayList<>());
-        recyclerView.setAdapter(mAdapter);
-        return new NodeAddapterWrapper(base, mAdapter);
+                        mAdapter = new MessageAdapter(new ArrayList<>());
+                        recyclerView.setAdapter(mAdapter);
+
+
+                    } catch (InterruptedException | ExecutionException ex) {
+                        DemoUtils.displayError(this, "Unable to load renderables", ex);
+                    }
+                    return new NodeAddapterWrapper(base, exampleLayoutRenderable, mAdapter);
+                });
     }
 
     private synchronized void setRcoreLocation() {
@@ -167,17 +192,13 @@ public class LocationActivity extends AppCompatActivity {
                 .getScene()
                 .setOnUpdateListener(
                         (FrameTime frameTime) -> {
-                            if (!hasFinishedLoading) {
-                                return;
-                            }
-
                             if (locationScene == null) {
                                 // If our locationScene object hasn't been setup yet, this is a good time to do it
                                 // We know that here, the AR components have been initiated.
                                 locationScene = new LocationScene(this, this, arSceneView);
                             }
 
-                            addNewViews();
+//                            addNewViews();
                             Frame frame = arSceneView.getArFrame();
                             if (frame == null) {
                                 return;
@@ -207,34 +228,35 @@ public class LocationActivity extends AppCompatActivity {
 
     private Boolean hasViews = false;
 
-    private void addNewViews() {
-        if (!hasViews) {
-            addMarker(new Location(37.9454224,23.6725676));
-            hasViews = true;
-        }
-    }
+//    private void addNewViews() {
+//        if (!hasViews) {
+//            addMarker(new Location(37.977723, 23.686900));
+//            hasViews = true;
+//        }
+//    }
 
-    /**
-     *   23.6725676,
-     37.9454224,
-     */
-    private synchronized void addMarker(Location location) {
-        NodeAddapterWrapper viewWrapper = getExampleView();
-        LocationMarker layoutLocationMarker = new LocationMarker(
-                location.getLongitude(),
-                location.getLatitude(),
-                viewWrapper.getNode()
-        );
+    private synchronized CompletableFuture createMarker(Location location) {
+        CompletableFuture<NodeAddapterWrapper> futureViewWrapper = getExampleView();
+        return futureViewWrapper.handle((viewWrapper, b) -> {
+            LocationMarker layoutLocationMarker = new LocationMarker(
+                    location.getLongitude(),
+                    location.getLatitude(),
+                    viewWrapper.getNode()
+            );
 //                                layoutLocationMarker.setScaleAtDistance(true);
 //                                layoutLocationMarker.setScaleModifier(0.4f);
-        layoutLocationMarker.setRenderEvent(node -> {
-            View eView = exampleLayoutRenderable.getView();
-            TextView distanceTextView = eView.findViewById(R.id.distance);
-            distanceTextView.setText("Distance: " + node.getDistance() + "m");
+            layoutLocationMarker.setRenderEvent(node -> {
+                View eView = viewWrapper.getViewRenderable().getView();
+                TextView distanceTextView = eView.findViewById(R.id.distance);
+                distanceTextView.setText("Distance: " + node.getDistance() + "m");
+            });
+            locationToWrapperMap.put(location, viewWrapper);
+            // Adding the marker
+            if (locationScene != null) {
+                locationScene.mLocationMarkers.add(layoutLocationMarker);
+            }
+            return null;
         });
-        locationToWrapperMap.put(location, viewWrapper);
-        // Adding the marker
-        locationScene.mLocationMarkers.add(layoutLocationMarker);
     }
 
     /**
