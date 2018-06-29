@@ -19,7 +19,11 @@ public class FirebaseUtils {
         return getUser(user).push();
     }
 
-    public static DatabaseReference getLocation(Location location){
+    public static DatabaseReference getLocation(Location location) {
         return getInstance().getReference("demo/"+location.toString());
+    }
+
+    public static DatabaseReference getNewPostOnLocation(Location location){
+        return getLocation(location).push();
     }
 }

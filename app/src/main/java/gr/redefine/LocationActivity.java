@@ -9,7 +9,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -26,23 +25,17 @@ import com.google.ar.sceneform.ArSceneView;
 import com.google.ar.sceneform.FrameTime;
 import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.rendering.ViewRenderable;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import gr.redefine.adapters.MessageAdapter;
 import gr.redefine.extras.Location;
-import gr.redefine.extras.NodeViewWrapper;
+import gr.redefine.extras.NodeAddapterWrapper;
 import uk.co.appoly.arcorelocation.LocationMarker;
 import uk.co.appoly.arcorelocation.LocationScene;
 import uk.co.appoly.arcorelocation.utils.ARLocationPermissionHelper;
@@ -66,7 +59,7 @@ public class LocationActivity extends AppCompatActivity {
     // Our ARCore-Location scene
     private LocationScene locationScene;
 
-    private Map<Location, NodeViewWrapper> locationToWrapperMap;
+    private Map<Location, NodeAddapterWrapper> locationToWrapperMap;
 
 
     private MessageAdapter mAdapter;
@@ -79,7 +72,7 @@ public class LocationActivity extends AppCompatActivity {
 
         locationToWrapperMap = new HashMap<>();
 
-        FirebaseUtils.getUser("user1").addValueEventListener(new ValueEventListener() {
+        /*FirebaseUtils.getUser("user1").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 GenericTypeIndicator<Map<String, Message>> genericTypeIndicator = new GenericTypeIndicator<Map<String, Message>>() {
@@ -102,15 +95,15 @@ public class LocationActivity extends AppCompatActivity {
                 // Failed to read value
                 Log.w(TAG, "Failed to read value.", error.toException());
             }
-        });
+        });*/
 
         Button button = findViewById(R.id.test);
 
         button.setOnClickListener(v -> {
-//            Toast.makeText(this, "Hello", Toast.LENGTH_LONG).show();
-            DatabaseReference db = FirebaseUtils.getNewPostForUser("user1");
+            DatabaseReference db = FirebaseUtils.getNewPostOnLocation(new Location(37.9454224,23.6725676));
             db.setValue(new Message("Test" + Math.random(), "user1"));
         });
+
         // Build a renderable from a 2D View.
         CompletableFuture<ViewRenderable> exampleLayout =
                 ViewRenderable.builder()
@@ -121,15 +114,10 @@ public class LocationActivity extends AppCompatActivity {
         CompletableFuture.allOf(exampleLayout)
                 .handle(
                         (notUsed, throwable) -> {
-                            // When you build a Renderable, Sceneform loads its resources in the background while
-                            // returning a CompletableFuture. Call handle(), thenAccept(), or check isDone()
-                            // before calling get().
-
                             if (throwable != null) {
                                 DemoUtils.displayError(this, "Unable to load renderables", throwable);
                                 return null;
                             }
-
                             try {
                                 exampleLayoutRenderable = exampleLayout.get();
                                 hasFinishedLoading = true;
@@ -145,7 +133,7 @@ public class LocationActivity extends AppCompatActivity {
 
 
     @SuppressLint("ClickableViewAccessibility")
-    private Node getExampleView() {
+    private NodeAddapterWrapper getExampleView() {
         Node base = new Node();
         base.setRenderable(exampleLayoutRenderable);
         Context c = this;
@@ -167,7 +155,7 @@ public class LocationActivity extends AppCompatActivity {
 
         mAdapter = new MessageAdapter(new ArrayList<>());
         recyclerView.setAdapter(mAdapter);
-        return base;
+        return new NodeAddapterWrapper(base, mAdapter);
     }
 
     private synchronized void setRcoreLocation() {
@@ -221,7 +209,7 @@ public class LocationActivity extends AppCompatActivity {
 
     private void addNewViews() {
         if (!hasViews) {
-            addMarker(new Location("23.6725676,37.9454224"));
+            addMarker(new Location(37.9454224,23.6725676));
             hasViews = true;
         }
     }
@@ -231,10 +219,11 @@ public class LocationActivity extends AppCompatActivity {
      37.9454224,
      */
     private synchronized void addMarker(Location location) {
+        NodeAddapterWrapper viewWrapper = getExampleView();
         LocationMarker layoutLocationMarker = new LocationMarker(
-                location.getLon(),
-                location.getLat(),
-                getExampleView()
+                location.getLongitude(),
+                location.getLatitude(),
+                viewWrapper.getNode()
         );
 //                                layoutLocationMarker.setScaleAtDistance(true);
 //                                layoutLocationMarker.setScaleModifier(0.4f);
@@ -243,6 +232,7 @@ public class LocationActivity extends AppCompatActivity {
             TextView distanceTextView = eView.findViewById(R.id.distance);
             distanceTextView.setText("Distance: " + node.getDistance() + "m");
         });
+        locationToWrapperMap.put(location, viewWrapper);
         // Adding the marker
         locationScene.mLocationMarkers.add(layoutLocationMarker);
     }
