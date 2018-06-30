@@ -6,13 +6,14 @@ import java.util.Date;
 import gr.redefine.extras.Location;
 
 public class Message  implements Serializable {
+    public enum TYPES {GENERAL, PUBLIC, ORG}
     private String message;
     private Long timestamp;
     private String user;
-    private String type;
+    private TYPES type;
     private Location location;
 
-    public Message(String text, String user, String type, Location location) {
+    public Message(String text, String user, TYPES type, Location location) {
         this.setMessage(text);
         this.setUser(user);
         this.setTimestamp(new Date().getTime());
@@ -21,16 +22,16 @@ public class Message  implements Serializable {
     }
 
     public Message(String text, String user, Location location) {
-        this(text,user, "general", location);
+        this(text,user, TYPES.GENERAL, location);
     }
 
     public Message(){ }
 
-    public String getType() {
+    public TYPES getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(TYPES type) {
         this.type = type;
     }
 

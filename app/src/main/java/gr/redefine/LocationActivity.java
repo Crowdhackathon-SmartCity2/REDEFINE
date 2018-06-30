@@ -3,9 +3,11 @@ package gr.redefine;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -13,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -96,11 +99,12 @@ public class LocationActivity extends AppCompatActivity {
 //                        .stream()
 //                        .map(Map.Entry::getValue)
 //                        .collect(Collectors.groupingBy(Message::getLocation, Collectors.toList()));
+
                 Map<Location, List<Message>> messagePerLoc = new HashMap<>();
                 hashMap.forEach((key, value) -> {
                     Location loc = value.getLocation();
                     if (!messagePerLoc.containsKey(loc)) {
-                        messagePerLoc.put(loc, new ArrayList<Message>());
+                        messagePerLoc.put(loc, new ArrayList<>());
                     }
                     messagePerLoc.get(loc).add(value);
                 });
@@ -125,12 +129,10 @@ public class LocationActivity extends AppCompatActivity {
             }
         });
 
-
         Button button = findViewById(R.id.test);
 
         button.setOnClickListener(v -> {
-            DatabaseReference db = FirebaseUtils.addNewMessage();
-            db.setValue(new Message("Test" + Math.random(), "user1", new Location(23.659263, 37.942026)));
+           showAddItemDialog(this);
         });
 
     }
@@ -142,7 +144,6 @@ public class LocationActivity extends AppCompatActivity {
                 ViewRenderable.builder()
                         .setView(this, R.layout.example_layout)
                         .build();
-
 
         return CompletableFuture.allOf(exampleLayout)
                 .handle((notUsed, throwable) -> {
@@ -257,6 +258,25 @@ public class LocationActivity extends AppCompatActivity {
             }
             return null;
         });
+    }
+
+    private void showAddItemDialog(Context c) {
+        final EditText taskEditText = new EditText(c);
+        AlertDialog dialog = new AlertDialog.Builder(c)
+                .setTitle("Add a new task")
+                .setMessage("What do you want to do next?")
+                .setView(taskEditText)
+                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String task = String.valueOf(taskEditText.getText());
+                        DatabaseReference db = FirebaseUtils.addNewMessage();
+                        db.setValue(new Message(task, "user1", new Location(23.659263, 37.942026)));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .create();
+        dialog.show();
     }
 
     /**

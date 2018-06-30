@@ -67,12 +67,6 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
         // - replace the contents of the view with that element
         final Message text = values.get(position);
         holder.messageText.setText(text.getMessage());
-        holder.messageText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                remove(position);
-            }
-        });
     }
 
     // Return the size of your dataset (invoked by the layout manager)
