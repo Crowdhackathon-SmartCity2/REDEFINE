@@ -23,6 +23,9 @@ public class LoginActivity extends AppCompatActivity {
         EditText email = findViewById(R.id.email);
         Context c = this;
         login.setOnClickListener((v)->{
+            /**
+             * @CodeEvaluator: Den pisteuw na perimenes kanoniko login???
+             */
             if(email.getText().length() == 0){
                 Toast.makeText(c,"Please fill the form", Toast.LENGTH_LONG);
                 return;
