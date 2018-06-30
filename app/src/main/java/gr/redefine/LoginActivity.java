@@ -30,9 +30,9 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(c,"Please fill the form", Toast.LENGTH_LONG);
                 return;
             }
-            Intent intent = new Intent(this, LocationActivity.class);
+            Intent intent = new Intent(LoginActivity.this, LocationActivity.class);
             Bundle b = new Bundle();
-            b.putString("user", "user1"); //Your id
+            b.putString("user", email.getText().toString()); //Your id
             intent.putExtras(b); //Put your id to your next Intent
             startActivity(intent);
             finish();

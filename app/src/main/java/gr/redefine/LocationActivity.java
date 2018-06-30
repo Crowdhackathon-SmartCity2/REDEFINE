@@ -76,11 +76,17 @@ public class LocationActivity extends AppCompatActivity {
             new GenericTypeIndicator<Map<String, Message>>() {
             };
 
+    private String user = "user1";
+
     @Override
     @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sceneform);
+
+        Bundle b = getIntent().getExtras();
+        if(b != null)
+            user = b.getString("user");
 
         exampleOneMenu = new Fabulous.Builder(this)
                 .setFab(findViewById(R.id.fab_menu))
@@ -127,6 +133,7 @@ public class LocationActivity extends AppCompatActivity {
         button.setOnClickListener(v -> {
             showAddItemDialog(this);
         });
+        button.setText(user);
 
     }
 
