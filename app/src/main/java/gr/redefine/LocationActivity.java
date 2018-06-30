@@ -3,22 +3,25 @@ package gr.redefine;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.fueled.fabulous.Fabulous;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Session;
@@ -33,6 +36,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.GenericTypeIndicator;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -45,16 +49,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import gr.redefine.adapters.MessageAdapter;
+import gr.redefine.extras.LinearPattern;
 import gr.redefine.extras.Location;
 import gr.redefine.extras.NodeAddapterWrapper;
 import uk.co.appoly.arcorelocation.LocationMarker;
 import uk.co.appoly.arcorelocation.LocationScene;
 import uk.co.appoly.arcorelocation.utils.ARLocationPermissionHelper;
 
-/**
- * This is a simple example that shows how to create an augmented reality (AR) application using the
- * ARCore and Sceneform APIs.
- */
 public class LocationActivity extends AppCompatActivity {
     private static final String TAG = "activity";
     private boolean installRequested;
@@ -63,16 +64,18 @@ public class LocationActivity extends AppCompatActivity {
 
     private ArSceneView arSceneView;
 
-    // Renderables for this example
-
-
     // Our ARCore-Location scene
     private LocationScene locationScene;
 
     private Map<Location, NodeAddapterWrapper> locationToWrapperMap;
 
+    private Fabulous exampleOneMenu;
 
     private MessageAdapter mAdapter;
+
+    private GenericTypeIndicator<Map<String, Message>> genericTypeIndicator =
+            new GenericTypeIndicator<Map<String, Message>>() {
+            };
 
     @Override
     @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
@@ -80,16 +83,20 @@ public class LocationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sceneform);
 
+        exampleOneMenu = new Fabulous.Builder(this)
+                .setFab(findViewById(R.id.fab_menu))
+                .setFabOverlay(findViewById(R.id.overlay))
+                .setMenuId(R.menu.menu_sample)
+                .setMenuPattern(new LinearPattern())
+                .build();
+
         locationToWrapperMap = new HashMap<>();
         setRcoreLocation();
 
         FirebaseUtils.getRoot().addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                Log.e(TAG,dataSnapshot.getValue().toString());
-                GenericTypeIndicator<Map<String, Message>> genericTypeIndicator =
-                        new GenericTypeIndicator<Map<String, Message>>() {
-                        };
+
                 Map<String, Message> hashMap = dataSnapshot.getValue(genericTypeIndicator);
                 if (hashMap == null) {
                     return;
@@ -108,35 +115,98 @@ public class LocationActivity extends AppCompatActivity {
                     }
                     messagePerLoc.get(loc).add(value);
                 });
-                messagePerLoc.forEach((key, value) -> {
-                    // If we don't have view on this location, create it
-                    if (!locationToWrapperMap.containsKey(key)) {
-                        Log.e(TAG, key.toString());
-                        createMarker(key).handle((a,b) -> {
-                            locationToWrapperMap.get(key).getmAdapter().swapItems(value);
-                            return null;
-                        });
-                    } else {
-                        locationToWrapperMap.get(key).getmAdapter().swapItems(value);
-                    }
-                });
+                createViews(messagePerLoc);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Failed to read value
                 Log.w(TAG, "Failed to read value.", error.toException());
             }
         });
 
-        Button button = findViewById(R.id.test);
+        Button button = findViewById(R.id.addMessage);
 
         button.setOnClickListener(v -> {
-           showAddItemDialog(this);
+            showAddItemDialog(this);
         });
 
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        exampleOneMenu.closeMenu();
+        Log.e(TAG, item.getTitle().toString());
+
+        if (locationScene != null) {
+            locationScene.mLocationMarkers.clear();
+
+        }
+//        Clear screen
+        locationToWrapperMap.values().forEach(v -> v.getViewRenderable().getView().setVisibility(View.INVISIBLE));
+        locationToWrapperMap.clear();
+
+        applyFilter(Message.TYPES.valueOf(item.getTitle().toString()));
+        Message.TYPES type = Message.TYPES.valueOf(item.getTitle().toString());
+        if(type.equals(Message.TYPES.GENERAL)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.global);
+            findViewById(R.id.addMessage).setVisibility(View.VISIBLE);
+        }else if(type.equals(Message.TYPES.ORG)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.building);
+            findViewById(R.id.addMessage).setVisibility(View.INVISIBLE);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void applyFilter(Message.TYPES type) {
+        Query query = FirebaseUtils.getRoot();
+        query.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, Message> hashMap = dataSnapshot.getValue(genericTypeIndicator);
+                if (hashMap == null) {
+                    return;
+                }
+                Map<Location, List<Message>> messagePerLoc = new HashMap<>();
+                hashMap.forEach((key, value) -> {
+                    Location loc = value.getLocation();
+                    if (!messagePerLoc.containsKey(loc)) {
+                        messagePerLoc.put(loc, new ArrayList<>());
+                    }
+                    if(value.getType().equals(type)) {
+                        messagePerLoc.get(loc).add(value);
+                    }
+                });
+                createViews(messagePerLoc);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    private void createViews(Map<Location,List<Message>> messagePerLoc){
+
+        messagePerLoc.forEach((key, value) -> {
+            // If we don't have view on this location, create it
+            if(value.isEmpty()){
+                return;
+            }
+            if (!locationToWrapperMap.containsKey(key)) {
+                Log.e(TAG, key.toString());
+                createMarker(key).handle((a, b) -> {
+                    locationToWrapperMap.get(key).getmAdapter().swapItems(value);
+                    return null;
+                });
+            } else {
+                locationToWrapperMap.get(key).getmAdapter().swapItems(value);
+            }
+        });
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     private CompletableFuture<NodeAddapterWrapper> getExampleView() {
@@ -212,29 +282,12 @@ public class LocationActivity extends AppCompatActivity {
                             if (locationScene != null) {
                                 locationScene.processFrame(frame);
                             }
-
-                            if (loadingMessageSnackbar != null) {
-                                for (Plane plane : frame.getUpdatedTrackables(Plane.class)) {
-                                    if (plane.getTrackingState() == TrackingState.TRACKING) {
-                                        hideLoadingMessage();
-                                    }
-                                }
-                            }
                         });
 
 
         // Lastly request CAMERA & fine location permission which is required by ARCore-Location.
         ARLocationPermissionHelper.requestPermission(this);
     }
-
-    private Boolean hasViews = false;
-
-//    private void addNewViews() {
-//        if (!hasViews) {
-//            addMarker(new Location(37.977723, 23.686900));
-//            hasViews = true;
-//        }
-//    }
 
     private synchronized CompletableFuture createMarker(Location location) {
         CompletableFuture<NodeAddapterWrapper> futureViewWrapper = getExampleView();
@@ -244,6 +297,7 @@ public class LocationActivity extends AppCompatActivity {
                     location.getLatitude(),
                     viewWrapper.getNode()
             );
+            viewWrapper.setLocationMarker(layoutLocationMarker);
 //                                layoutLocationMarker.setScaleAtDistance(true);
 //                                layoutLocationMarker.setScaleModifier(0.4f);
             layoutLocationMarker.setRenderEvent(node -> {
@@ -263,16 +317,13 @@ public class LocationActivity extends AppCompatActivity {
     private void showAddItemDialog(Context c) {
         final EditText taskEditText = new EditText(c);
         AlertDialog dialog = new AlertDialog.Builder(c)
-                .setTitle("Add a new task")
-                .setMessage("What do you want to do next?")
+                .setTitle("Add a new message")
+                .setMessage("What are you thinking?")
                 .setView(taskEditText)
-                .setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        String task = String.valueOf(taskEditText.getText());
-                        DatabaseReference db = FirebaseUtils.addNewMessage();
-                        db.setValue(new Message(task, "user1", new Location(23.659263, 37.942026)));
-                    }
+                .setPositiveButton("Add", (dialog1, which) -> {
+                    String task = String.valueOf(taskEditText.getText());
+                    DatabaseReference db = FirebaseUtils.addNewMessage();
+                    db.setValue(new Message(task, "user1", new Location(23.659263, 37.942026)));
                 })
                 .setNegativeButton("Cancel", null)
                 .create();

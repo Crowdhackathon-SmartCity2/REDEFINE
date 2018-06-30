@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import gr.redefine.Message;
@@ -17,12 +19,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         public TextView messageText;
+        public TextView timeText;
         public View layout;
 
         public ViewHolder(View v) {
             super(v);
             layout = v;
             messageText = v.findViewById(R.id.text);
+            timeText = v.findViewById(R.id.time_posted);
         }
     }
 
@@ -67,6 +71,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
         // - replace the contents of the view with that element
         final Message text = values.get(position);
         holder.messageText.setText(text.getMessage());
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String dateString = formatter.format(new Date(text.getTimestamp()));
+        holder.timeText.setText(dateString);
     }
 
     // Return the size of your dataset (invoked by the layout manager)

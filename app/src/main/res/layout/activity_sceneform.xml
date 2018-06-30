@@ -1,4 +1,3 @@
-
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,19 +5,35 @@
     android:layout_height="match_parent"
     tools:context="gr.redefine.LocationActivity">
 
-  <com.google.ar.sceneform.ArSceneView
-      android:id="@+id/ar_scene_view"
-      android:layout_width="fill_parent"
-      android:layout_height="fill_parent"
-      android:layout_gravity="top"/>
+    <com.google.ar.sceneform.ArSceneView
+        android:id="@+id/ar_scene_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="top" />
 
-  <Button
-      android:id="@+id/test"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_alignParentBottom="true"
-      android:layout_centerHorizontal="true"
-      android:layout_marginBottom="48dp"
-      android:text="Test" />
+    <View
+        android:id="@+id/overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone" />
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="8dp"
+        android:backgroundTint="@color/color_chat_user_name"
+        android:src="@drawable/search" />
+
+    <Button
+        android:id="@+id/addMessage"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="0dp"
+        android:text="Add a message" />
 
 </RelativeLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_global"
+        android:icon="@drawable/global"
+        android:title="GENERAL" />
+    <item
+        android:id="@+id/menu_org"
+        android:icon="@drawable/building"
+        android:title="ORG" />
+</menu>

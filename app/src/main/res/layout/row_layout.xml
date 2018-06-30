@@ -21,10 +21,10 @@
             android:layout_marginStart="20dp"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_img_chat_one"
-            android:layout_width="40dp"
-            android:layout_height="40dp"/>
+            android:layout_width="50dp"
+            android:layout_height="50dp"/>
 
-        <TextView
+       <!-- <TextView
             android:id="@+id/playerName"
             android:layout_toStartOf="@+id/playerTargetName"
             android:layout_toEndOf="@+id/playerImage"
@@ -33,20 +33,21 @@
             android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:text="Tasos Nikas Manikas"/>
+            tools:text="Tasos Nikas Manikas"/>-->
 
         <TextView
             android:id="@+id/text"
-            android:layout_below="@+id/playerName"
+            android:layout_toStartOf="@+id/playerTargetName"
             android:layout_toEndOf="@+id/playerImage"
             android:layout_marginStart="20dp"
-            android:textSize="15sp"
+            android:textSize="18sp"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="Ntaras Test Team"/>
 
         <TextView
-            android:id="@+id/playerLeagueName"
+            android:id="@+id/time_posted"
             android:layout_below="@+id/text"
             android:layout_toEndOf="@+id/playerImage"
             android:layout_marginStart="20dp"
