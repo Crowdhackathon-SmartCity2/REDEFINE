@@ -12,6 +12,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import gr.redefine.extras.CreateDB;
+
 public class LoginActivity extends AppCompatActivity {
 
     @Override
@@ -22,6 +24,7 @@ public class LoginActivity extends AppCompatActivity {
         Button login = findViewById(R.id.login);
         EditText email = findViewById(R.id.email);
         Context c = this;
+//        CreateDB.initDb();
         login.setOnClickListener((v)->{
             /**
              * @CodeEvaluator: Den pisteuw na perimenes kanoniko login???
