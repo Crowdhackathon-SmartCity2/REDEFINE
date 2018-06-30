@@ -118,7 +118,7 @@ public class LocationActivity extends AppCompatActivity {
         locationToWrapperMap = new HashMap<>();
         setRcoreLocation();
 //        CreateDB.initDb();
-        FirebaseUtils.getRoot().addValueEventListener(new ValueEventListener() {
+       /* FirebaseUtils.getRoot().addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
@@ -147,8 +147,9 @@ public class LocationActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) {
                 Log.w(TAG, "Failed to read value.", error.toException());
             }
-        });
+        });*/
 
+        applyFilter(Message.TYPES.HEALTH);
         Handler handler = new Handler();
         Runnable runnable = new Runnable() {
             @Override
