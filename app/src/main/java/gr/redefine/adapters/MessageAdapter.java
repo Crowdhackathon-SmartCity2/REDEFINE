@@ -4,7 +4,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,12 +23,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
     public class ViewHolder extends RecyclerView.ViewHolder {
         public TextView messageText;
         public TextView timeText;
+        public ImageView profileImg;
         public View layout;
 
         public ViewHolder(View v) {
             super(v);
             layout = v;
             messageText = v.findViewById(R.id.text);
+            profileImg = v.findViewById(R.id.profileImage);
             timeText = v.findViewById(R.id.time_posted);
         }
     }
@@ -74,6 +79,9 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHold
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
         String dateString = formatter.format(new Date(text.getTimestamp()));
         holder.timeText.setText(dateString);
+        if(text.getImgURL()!=null){
+            Picasso.get().load(text.getImgURL()).into(holder.profileImg);
+        }
     }
 
     // Return the size of your dataset (invoked by the layout manager)

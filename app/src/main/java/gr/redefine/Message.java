@@ -12,6 +12,7 @@ public class Message  implements Serializable {
     private String user;
     private TYPES type;
     private Location location;
+    private String imgURL;
 
     public Message(String text, String user, TYPES type, Location location) {
         this.setMessage(text);
@@ -65,5 +66,13 @@ public class Message  implements Serializable {
 
     public void setLocation(Location location) {
         this.location = location;
+    }
+
+    public String getImgURL() {
+        return imgURL;
+    }
+
+    public void setImgURL(String imgURL) {
+        this.imgURL = imgURL;
     }
 }
