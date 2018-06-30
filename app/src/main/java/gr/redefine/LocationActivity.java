@@ -4,6 +4,7 @@ package gr.redefine;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -38,6 +39,13 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,9 +56,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import gr.redefine.adapters.MessageAdapter;
+import gr.redefine.bean.TelematicsBean;
+import gr.redefine.extras.CreateDB;
 import gr.redefine.extras.LinearPattern;
 import gr.redefine.extras.Location;
 import gr.redefine.extras.NodeAddapterWrapper;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import uk.co.appoly.arcorelocation.LocationMarker;
 import uk.co.appoly.arcorelocation.LocationScene;
 import uk.co.appoly.arcorelocation.utils.ARLocationPermissionHelper;
@@ -77,6 +93,10 @@ public class LocationActivity extends AppCompatActivity {
             };
 
     private String user = "user1";
+    private static final String BASE_URL = "https://telematics.oasa.gr/api/?act=getStopArrivals&p1=340081";
+
+    OkHttpClient client = new OkHttpClient();
+
 
     @Override
     @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"})
@@ -85,7 +105,7 @@ public class LocationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sceneform);
 
         Bundle b = getIntent().getExtras();
-        if(b != null)
+        if (b != null)
             user = b.getString("user");
 
         exampleOneMenu = new Fabulous.Builder(this)
@@ -97,7 +117,7 @@ public class LocationActivity extends AppCompatActivity {
 
         locationToWrapperMap = new HashMap<>();
         setRcoreLocation();
-
+//        CreateDB.initDb();
         FirebaseUtils.getRoot().addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -129,18 +149,21 @@ public class LocationActivity extends AppCompatActivity {
             }
         });
 
-        Button button = findViewById(R.id.addMessage);
-        button.setOnClickListener(v -> {
-            showAddItemDialog(this);
-        });
-        button.setText(user);
-
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                // polling code
+                handler.postDelayed(this, 30 * 1000);
+            }
+        };
+        handler.postDelayed(runnable, 30 * 1000);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         exampleOneMenu.closeMenu();
-        Log.e(TAG, item.getTitle().toString());
+//        Log.e(TAG, item.getTitle().toString());
 
         if (locationScene != null) {
             locationScene.mLocationMarkers.clear();
@@ -151,21 +174,24 @@ public class LocationActivity extends AppCompatActivity {
         locationToWrapperMap.clear();
 
         applyFilter(Message.TYPES.valueOf(item.getTitle().toString()));
-        Message.TYPES type = Message.TYPES.valueOf(item.getTitle().toString());
-        if(type.equals(Message.TYPES.GENERAL)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.global);
-            findViewById(R.id.addMessage).setVisibility(View.VISIBLE);
-        }else if(type.equals(Message.TYPES.ORG)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.building);
-            findViewById(R.id.addMessage).setVisibility(View.INVISIBLE);
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
     private void applyFilter(Message.TYPES type) {
+        if (type.equals(Message.TYPES.GENERAL)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.global);
+        } else if (type.equals(Message.TYPES.HEALTH)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.public_health);
+        } else if (type.equals(Message.TYPES.PUBLIC_SAFETY)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.alarm);
+        } else if (type.equals(Message.TYPES.BUS)) {
+            FloatingActionButton fb = findViewById(R.id.fab_menu);
+            fb.setImageResource(R.drawable.bus);
+        }
+
         Query query = FirebaseUtils.getRoot();
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -180,7 +206,7 @@ public class LocationActivity extends AppCompatActivity {
                     if (!messagePerLoc.containsKey(loc)) {
                         messagePerLoc.put(loc, new ArrayList<>());
                     }
-                    if(value.getType().equals(type)) {
+                    if (value.getType().equals(type)) {
                         messagePerLoc.get(loc).add(value);
                     }
                 });
@@ -194,15 +220,14 @@ public class LocationActivity extends AppCompatActivity {
         });
     }
 
-    private void createViews(Map<Location,List<Message>> messagePerLoc){
+    private void createViews(Map<Location, List<Message>> messagePerLoc) {
 
         messagePerLoc.forEach((key, value) -> {
             // If we don't have view on this location, create it
-            if(value.isEmpty()){
+            if (value.isEmpty()) {
                 return;
             }
             if (!locationToWrapperMap.containsKey(key)) {
-                Log.e(TAG, key.toString());
                 createMarker(key).handle((a, b) -> {
                     locationToWrapperMap.get(key).getmAdapter().swapItems(value);
                     return null;
@@ -319,21 +344,21 @@ public class LocationActivity extends AppCompatActivity {
         });
     }
 
-    private void showAddItemDialog(Context c) {
-        final EditText taskEditText = new EditText(c);
-        AlertDialog dialog = new AlertDialog.Builder(c)
-                .setTitle("Add a new message")
-                .setMessage("What are you thinking?")
-                .setView(taskEditText)
-                .setPositiveButton("Add", (dialog1, which) -> {
-                    String task = String.valueOf(taskEditText.getText());
-                    DatabaseReference db = FirebaseUtils.addNewMessage();
-                    db.setValue(new Message(task, "user1", new Location(23.659263, 37.942026)));
-                })
-                .setNegativeButton("Cancel", null)
-                .create();
-        dialog.show();
-    }
+//    private void showAddItemDialog(Context c) {
+//        final EditText taskEditText = new EditText(c);
+//        AlertDialog dialog = new AlertDialog.Builder(c)
+//                .setTitle("Add a new message")
+//                .setMessage("What are you thinking?")
+//                .setView(taskEditText)
+//                .setPositiveButton("Add", (dialog1, which) -> {
+//                    String task = String.valueOf(taskEditText.getText());
+//                    DatabaseReference db = FirebaseUtils.addNewMessage();
+//                    db.setValue(new Message(task, new Location(23.659263, 37.942026)));
+//                })
+//                .setNegativeButton("Cancel", null)
+//                .create();
+//        dialog.show();
+//    }
 
     /**
      * Make sure we call locationScene.resume();

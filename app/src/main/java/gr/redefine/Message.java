@@ -6,7 +6,7 @@ import java.util.Date;
 import gr.redefine.extras.Location;
 
 public class Message  implements Serializable {
-    public enum TYPES {GENERAL, PUBLIC, ORG}
+    public enum TYPES {GENERAL, HEALTH, PUBLIC_SAFETY, BUS}
     private String message;
     private Long timestamp;
     private String user;
@@ -22,8 +22,13 @@ public class Message  implements Serializable {
         this.setLocation(location);
     }
 
-    public Message(String text, String user, Location location) {
-        this(text,user, TYPES.GENERAL, location);
+    public Message(String text, Location location, String imgURL) {
+        this(text,"user1", TYPES.HEALTH, location);
+        this.setImgURL(imgURL);
+    }
+    public Message(TYPES types, String text, Location location, String imgURL) {
+        this(text,"user1", types, location);
+        this.setImgURL(imgURL);
     }
 
     public Message(){ }

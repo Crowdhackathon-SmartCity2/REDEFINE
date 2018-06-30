@@ -2,10 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_global"
-        android:icon="@drawable/global"
-        android:title="GENERAL" />
+        android:icon="@drawable/public_health"
+        android:title="HEALTH" />
     <item
         android:id="@+id/menu_org"
-        android:icon="@drawable/building"
-        android:title="ORG" />
+        android:icon="@drawable/alarm"
+        android:title="PUBLIC_SAFETY" />
+    <item
+        android:id="@+id/menu_bus"
+        android:icon="@drawable/bus"
+        android:title="BUS" />
 </menu>

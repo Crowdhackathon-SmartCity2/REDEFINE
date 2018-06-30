@@ -27,13 +27,13 @@
         android:backgroundTint="@color/color_chat_user_name"
         android:src="@drawable/search" />
 
-    <Button
-        android:id="@+id/addMessage"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="0dp"
-        android:text="Add a message" />
+    <!--<Button-->
+        <!--android:id="@+id/addMessage"-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentBottom="true"-->
+        <!--android:layout_centerHorizontal="true"-->
+        <!--android:layout_marginBottom="0dp"-->
+        <!--android:text="Add a message" />-->
 
 </RelativeLayout>

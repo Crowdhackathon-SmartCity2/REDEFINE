@@ -29,7 +29,7 @@
         android:backgroundTint="#33ffffff"
         android:ems="10"
         android:hint="@string/hint_email"
-        android:inputType="text"
+        android:inputType="textEmailAddress"
         android:textColor="@android:color/white"
         android:textColorHint="@android:color/white"
         android:textSize="20sp"
