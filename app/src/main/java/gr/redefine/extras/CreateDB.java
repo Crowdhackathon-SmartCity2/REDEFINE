@@ -17,6 +17,7 @@ public class CreateDB {
     private static final String FIRE_ICON = "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/CoA_Hellenic_Fire_Service.svg/1200px-CoA_Hellenic_Fire_Service.svg.png";
     private static final String SEA_ICON = "https://upload.wikimedia.org/wikipedia/el/9/95/Hellenic_Coast_Guard_logo.png";
     private static final String APERGIA_ICON = "https://is4-ssl.mzstatic.com/image/thumb/Purple118/v4/1f/30/6d/1f306d8f-769d-31de-6181-ac7d423d236a/mzl.eqxwxtgp.jpg/246x0w.jpg";
+    private static final String STAR_ICON = "https://banner2.kisspng.com/20171210/7c1/golden-cartoon-championship-trophy-5a2d3b9ba45520.8585672215129138196731.jpg";
 //
     public static void initDb() {
         List<Message> pharmacies = new ArrayList<>(
@@ -31,7 +32,8 @@ public class CreateDB {
                         new Message(Message.TYPES.PUBLIC_SAFETY,"ΛΙΜΕΝΙΚΟ ΣΩΜΑ ΠΕΙΡΑΙΑ", new Location( 23.648630,37.933897), SEA_ICON),
                         new Message(Message.TYPES.BUS,"217 -> 3 Λεπτά", new Location( 23.6928533,37.9374729), APERGIA_ICON),
                         new Message(Message.TYPES.BUS,"A1  -> 7 Λεπτά", new Location( 23.6928533,37.9374729), APERGIA_ICON),
-                        new Message(Message.TYPES.BUS,"130 -> 12 Λεπτά", new Location( 23.6928533,37.9374729), APERGIA_ICON)
+                        new Message(Message.TYPES.BUS,"130 -> 12 Λεπτά", new Location( 23.6928533,37.9374729), APERGIA_ICON),
+                        new Message(Message.TYPES.GAME,"Έλα για να ξεκινήσεις το παιχνίδι! (+500 πόντοι)", new Location( 23.695428,37.941704 ), STAR_ICON)
                 )
         );
 

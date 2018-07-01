@@ -6,7 +6,7 @@ import java.util.Date;
 import gr.redefine.extras.Location;
 
 public class Message  implements Serializable {
-    public enum TYPES {GENERAL, HEALTH, PUBLIC_SAFETY, BUS}
+    public enum TYPES {GENERAL, HEALTH, PUBLIC_SAFETY, BUS, GAME}
     private String message;
     private Long timestamp;
     private String user;

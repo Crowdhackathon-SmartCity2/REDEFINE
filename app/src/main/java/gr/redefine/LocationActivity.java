@@ -8,22 +8,18 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.util.ArrayMap;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.fueled.fabulous.Fabulous;
 import com.google.ar.core.Frame;
-import com.google.ar.core.Plane;
 import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -34,39 +30,24 @@ import com.google.ar.sceneform.Node;
 import com.google.ar.sceneform.rendering.ViewRenderable;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import gr.redefine.adapters.MessageAdapter;
-import gr.redefine.bean.TelematicsBean;
 import gr.redefine.extras.CreateDB;
 import gr.redefine.extras.LinearPattern;
 import gr.redefine.extras.Location;
 import gr.redefine.extras.NodeAddapterWrapper;
-import okhttp3.Callback;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import uk.co.appoly.arcorelocation.LocationMarker;
 import uk.co.appoly.arcorelocation.LocationScene;
 import uk.co.appoly.arcorelocation.utils.ARLocationPermissionHelper;
@@ -88,6 +69,15 @@ public class LocationActivity extends AppCompatActivity {
 
     private MessageAdapter mAdapter;
 
+    private static final Map<Message.TYPES, Integer> fabResource;
+    static {
+        Map<Message.TYPES, Integer> amap = new ArrayMap<>();
+        amap.put(Message.TYPES.BUS, R.drawable.bus);
+        amap.put(Message.TYPES.HEALTH, R.drawable.public_health);
+        amap.put(Message.TYPES.GAME, R.drawable.trophy);
+        amap.put(Message.TYPES.PUBLIC_SAFETY, R.drawable.alarm);
+        fabResource = Collections.unmodifiableMap(amap);
+    }
     private GenericTypeIndicator<Map<String, Message>> genericTypeIndicator =
             new GenericTypeIndicator<Map<String, Message>>() {
             };
@@ -179,19 +169,9 @@ public class LocationActivity extends AppCompatActivity {
     }
 
     private void applyFilter(Message.TYPES type) {
-        if (type.equals(Message.TYPES.GENERAL)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.global);
-        } else if (type.equals(Message.TYPES.HEALTH)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.public_health);
-        } else if (type.equals(Message.TYPES.PUBLIC_SAFETY)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.alarm);
-        } else if (type.equals(Message.TYPES.BUS)) {
-            FloatingActionButton fb = findViewById(R.id.fab_menu);
-            fb.setImageResource(R.drawable.bus);
-        }
+        FloatingActionButton fb = findViewById(R.id.fab_menu);
+
+        fb.setImageResource(fabResource.getOrDefault(type,R.drawable.global));
 
         Query query = FirebaseUtils.getRoot();
         query.addListenerForSingleValueEvent(new ValueEventListener() {
