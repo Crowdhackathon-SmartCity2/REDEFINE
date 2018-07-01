@@ -18,7 +18,7 @@
     <string name="plane_finding">Searching for surfaces&#8230;</string>
     <string name="hint_email">Enter username</string>
     <string name="hint_password">Enter password</string>
-    <string name="hint_password_confirm">Confirm password</string>
+    <string name="hint_password_confirm">Confir√ password</string>
     <string name="btn_login">Login</string>
     <string name="btn_signup">Sign Up</string>
     <string name="text_signup">Need Sign Up?</string>
